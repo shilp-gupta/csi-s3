@@ -34,7 +34,7 @@ type driver struct {
 
 var (
 	vendorVersion = "v1.2.0-rc.1"
-	driverName    = "ch.ctrox.csi.s3-driver"
+	driverName    = "me.shilp.csi.s3-driver"
 )
 
 // New initializes the driver

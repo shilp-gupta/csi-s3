@@ -2,13 +2,13 @@ package mounter
 
 import (
 	"fmt"
-	"os"
 	"path"
 
 	"context"
 
 	"github.com/ctrox/csi-s3/pkg/s3"
 	goofysApi "github.com/kahing/goofys/api"
+	goofysApiCommon "github.com/kahing/goofys/api/common"
 )
 
 const (
@@ -49,19 +49,26 @@ func (goofys *goofysMounter) Unstage(stageTarget string) error {
 }
 
 func (goofys *goofysMounter) Mount(source string, target string) error {
-	goofysCfg := &goofysApi.Config{
-		MountPoint: target,
-		Endpoint:   goofys.endpoint,
-		Region:     goofys.region,
-		DirMode:    0755,
-		FileMode:   0644,
+	goofysCfg := &goofysApiCommon.FlagStorage{
 		MountOptions: map[string]string{
 			"allow_other": "",
 		},
+		MountPoint: target,
+		DirMode: 0o777,
+		FileMode: 0o666,
+		Endpoint: goofys.endpoint,
+		Backend: &goofysApiCommon.S3Config{
+			Region: goofys.region,
+			AccessKey: goofys.accessKeyID,
+			SecretKey: goofys.secretAccessKey,
+			StorageClass: "STANDARD", // Need to figure out how to expose this as a parameter
+		},
+		StatCacheTTL: 0, // Need to figure out how to expose this as a parameter
+		TypeCacheTTL: 0, // Need to figure out how to expose this as a parameter
+		DebugFuse: false, // Need to figure out how to expose this as a parameter
+		DebugS3: false, // Need to figure out how to expose this as a parameter
 	}
 
-	os.Setenv("AWS_ACCESS_KEY_ID", goofys.accessKeyID)
-	os.Setenv("AWS_SECRET_ACCESS_KEY", goofys.secretAccessKey)
 	fullPath := fmt.Sprintf("%s:%s", goofys.meta.BucketName, path.Join(goofys.meta.Prefix, goofys.meta.FSPath))
 
 	_, _, err := goofysApi.Mount(context.Background(), fullPath, goofysCfg)
